@@ -7,7 +7,7 @@ pkgbase=xorg-server
 pkgname=('xorg-server' 'xorg-server-xephyr' 'xorg-server-xdmx' 'xorg-server-xvfb'
 		'xorg-server-xnest' 'xorg-server-xwayland' 'xorg-server-common' 'xorg-server-devel')
 pkgver=1.19.3
-pkgrel=3
+pkgrel=4
 arch=('x86_64')
 license=('custom')
 groups=('xorg')
@@ -24,14 +24,20 @@ source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pk
 		xvfb-run.1
 		nvidia-add-modulepath-support.patch
 		xserver-autobind-hotplug.patch
-		modesetting-Set-correct-DRM-event-context-version.patch)
+		modesetting-Set-correct-DRM-event-context-version.patch
+		CVE-2017-10971.patch
+        CVE-2017-10972.patch
+        bug99708.patch)
 		
 sha256sums=('677a8166e03474719238dfe396ce673c4234735464d6dadf2959b600d20e5a98'
             'ff0156309470fc1d378fd2e104338020a884295e285972cc88e250e031cc35b9'
             '2460adccd3362fefd4cdc5f1c70f332d7b578091fb9167bf88b5f91265bbd776'
             '23f2fd69a53ef70c267becf7d2a9e7e07b739f8ec5bec10adb219bc6465099c7'
             '67aaf8668c5fb3c94b2569df28e64bfa1dc97ce429cbbc067c309113caff6369'
-            'acb0357acf54073eda30b4014a9f402448dc65b5e465ae5b5c5b807914b43da2')
+            'acb0357acf54073eda30b4014a9f402448dc65b5e465ae5b5c5b807914b43da2'
+            '3950d5d64822b4a34ca0358389216eed25e159751006d674e7cb491aa3b54d0b'
+            '700af48c541f613b376eb7a7e567d13c0eba7a835d0aaa9d4b0431ebdd9f397c'
+            '67013743ba8ff1663b233f50fae88989d36504de83fca5f93af5623f2bef6920')
 validpgpkeys=('6DD4217456569BA711566AC7F06E8FDE7B45DAAC') # Eric Vidal
 
 prepare() {
@@ -45,12 +51,25 @@ prepare() {
   
   # merged in trunk
   patch -Np1 -i ../modesetting-Set-correct-DRM-event-context-version.patch
+  patch -Np1 -i ../CVE-2017-10971.patch
+  patch -Np1 -i ../CVE-2017-10972.patch
+
+  # https://bugs.archlinux.org/task/53404
+  patch -Np1 -i ../bug99708.patch
 
   autoreconf -vfi
 }
 
 build() {
-  cd "${pkgname}-${pkgver}"
+  
+  # Since pacman 5.0.2-2, hardened flags are now enabled in makepkg.conf
+  # With them, module fail to load with undefined symbol.
+  # See https://bugs.archlinux.org/task/55102 / https://bugs.archlinux.org/task/54845
+  export CFLAGS=${CFLAGS/-fno-plt}
+  export CXXFLAGS=${CXXFLAGS/-fno-plt}
+  export LDFLAGS=${LDFLAGS/,-z,now}
+  
+  cd "${pkgbase}-${pkgver}"
   ./configure --prefix=/usr \
       --enable-ipv6 \
       --enable-dri \
