@@ -6,7 +6,7 @@
 pkgbase=xorg-server
 pkgname=('xorg-server' 'xorg-server-xephyr' 'xorg-server-xdmx' 'xorg-server-xvfb'
 		'xorg-server-xnest' 'xorg-server-xwayland' 'xorg-server-common' 'xorg-server-devel')
-pkgver=1.19.4
+pkgver=1.19.5
 pkgrel=2
 arch=('x86_64')
 license=('custom')
@@ -25,7 +25,7 @@ source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pk
 		nvidia-add-modulepath-support.patch
 		xserver-autobind-hotplug.patch)
 		
-sha256sums=('aa758acea91deaf1f95069ddc5ea3818e13675fb14fef40ad1b3d0b2bf03c9a8'
+sha256sums=('18fffa8eb93d06d2800d06321fc0df4d357684d8d714315a66d8dfa7df251447'
             'ff0156309470fc1d378fd2e104338020a884295e285972cc88e250e031cc35b9'
             '2460adccd3362fefd4cdc5f1c70f332d7b578091fb9167bf88b5f91265bbd776'
             '23f2fd69a53ef70c267becf7d2a9e7e07b739f8ec5bec10adb219bc6465099c7'
