@@ -6,13 +6,13 @@
 pkgbase=xorg-server
 pkgname=('xorg-server' 'xorg-server-xephyr' 'xorg-server-xdmx' 'xorg-server-xvfb'
 		'xorg-server-xnest' 'xorg-server-xwayland' 'xorg-server-common' 'xorg-server-devel')
-pkgver=1.19.5
-pkgrel=2
+pkgver=1.19.6
+pkgrel=3
 arch=('x86_64')
 license=('custom')
 groups=('xorg')
 url="http://xorg.freedesktop.org"
-makedepends=('pixman' 'libx11' 'mesa' 'libgl' 'xf86driproto' 'xcmiscproto' 'xtrans' 'bigreqsproto' 'randrproto' 
+makedepends=('pixman' 'libx11' 'mesa' 'mesa-libgl' 'xf86driproto' 'xcmiscproto' 'xtrans' 'bigreqsproto' 'randrproto' 
              'inputproto' 'fontsproto' 'videoproto' 'presentproto' 'compositeproto' 'recordproto' 'scrnsaverproto'
              'resourceproto' 'xineramaproto' 'libxkbfile' 'libxfont2' 'renderproto' 'libpciaccess' 'libxv'
              'xf86dgaproto' 'libxmu' 'libxrender' 'libxi' 'dmxproto' 'libxaw' 'libdmx' 'libxtst' 'libxres'
@@ -23,13 +23,15 @@ source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pk
         xvfb-run
 		xvfb-run.1
 		nvidia-add-modulepath-support.patch
-		xserver-autobind-hotplug.patch)
+		xserver-autobind-hotplug.patch
+		revert-udev-changes.diff)
 		
-sha256sums=('18fffa8eb93d06d2800d06321fc0df4d357684d8d714315a66d8dfa7df251447'
+sha256sums=('a732502f1db000cf36a376cd0c010ffdbf32ecdd7f1fa08ba7f5bdf9601cc197'
             'ff0156309470fc1d378fd2e104338020a884295e285972cc88e250e031cc35b9'
             '2460adccd3362fefd4cdc5f1c70f332d7b578091fb9167bf88b5f91265bbd776'
             '23f2fd69a53ef70c267becf7d2a9e7e07b739f8ec5bec10adb219bc6465099c7'
-            '67aaf8668c5fb3c94b2569df28e64bfa1dc97ce429cbbc067c309113caff6369')
+            '67aaf8668c5fb3c94b2569df28e64bfa1dc97ce429cbbc067c309113caff6369'
+            'c551dd768de10dd8a47213696003d118edb248ca6c09c0d9f1591abb0632d199')
 validpgpkeys=('6DD4217456569BA711566AC7F06E8FDE7B45DAAC') # Eric Vidal
 
 prepare() {
@@ -41,6 +43,10 @@ prepare() {
   # patch from Fedora, not yet merged
   patch -Np1 -i ../xserver-autobind-hotplug.patch
   
+  # https://bugs.archlinux.org/task/56804 
+  # https://bugs.freedesktop.org/show_bug.cgi?id=104382
+  patch -Rp1 -i ../revert-udev-changes.diff
+
   autoreconf -vfi
 }
 
@@ -86,7 +92,7 @@ build() {
       --with-sha1=libgcrypt \
       --disable-systemd \
       --without-systemd-daemon \
-      --enable-systemd-logind=no 
+      --disable-systemd-logind
       
   make
 
@@ -101,7 +107,7 @@ build() {
 
 package_xorg-server-common() {
   pkgdesc="Xorg server common files"
-  depends=('xkeyboard-config' 'xorg-xkbcomp' 'xorg-setxkbmap' 'xorg-fonts-misc' 'libunwind')
+  depends=('xkeyboard-config' 'xorg-xkbcomp' 'xorg-setxkbmap')
 
   cd "${pkgbase}-${pkgver}"
   install -m755 -d "${pkgdir}/usr/share/licenses/xorg-server-common"
@@ -118,7 +124,7 @@ package_xorg-server-common() {
 
 package_xorg-server() {
   pkgdesc="Xorg X server"
-  depends=('libepoxy' 'libxfont2' 'pixman' 'xorg-server-common' 'libunwind' 'libgl' 'xf86-input-libinput'
+  depends=('libepoxy' 'libxfont2' 'pixman' 'xorg-server-common' 'libunwind' 'dbus' 'libgl' 'xf86-input-libinput'
 			'libpciaccess' 'libdrm' 'libxshmfence')
   # see xorg-server-*/hw/xfree86/common/xf86Module.h for ABI versions - we provide major numbers that drivers can depend on
   # and /usr/lib/pkgconfig/xorg-server.pc in xorg-server-devel pkg
