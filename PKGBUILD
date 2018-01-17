@@ -7,7 +7,7 @@ pkgbase=xorg-server
 pkgname=('xorg-server' 'xorg-server-xephyr' 'xorg-server-xdmx' 'xorg-server-xvfb'
 		'xorg-server-xnest' 'xorg-server-xwayland' 'xorg-server-common' 'xorg-server-devel')
 pkgver=1.19.6
-pkgrel=3
+pkgrel=4
 arch=('x86_64')
 license=('custom')
 groups=('xorg')
@@ -24,14 +24,16 @@ source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pk
 		xvfb-run.1
 		nvidia-add-modulepath-support.patch
 		xserver-autobind-hotplug.patch
-		revert-udev-changes.diff)
+		revert-udev-changes.diff
+		xwrap-suid-race.patch)
 		
 sha256sums=('a732502f1db000cf36a376cd0c010ffdbf32ecdd7f1fa08ba7f5bdf9601cc197'
             'ff0156309470fc1d378fd2e104338020a884295e285972cc88e250e031cc35b9'
             '2460adccd3362fefd4cdc5f1c70f332d7b578091fb9167bf88b5f91265bbd776'
             '23f2fd69a53ef70c267becf7d2a9e7e07b739f8ec5bec10adb219bc6465099c7'
             '67aaf8668c5fb3c94b2569df28e64bfa1dc97ce429cbbc067c309113caff6369'
-            'c551dd768de10dd8a47213696003d118edb248ca6c09c0d9f1591abb0632d199')
+            'c551dd768de10dd8a47213696003d118edb248ca6c09c0d9f1591abb0632d199'
+            '1c74554f98cad4a8b1d827b6aff221058a1f3f4d9b7111346acb22502ac5e59d')
 validpgpkeys=('6DD4217456569BA711566AC7F06E8FDE7B45DAAC') # Eric Vidal
 
 prepare() {
@@ -46,6 +48,10 @@ prepare() {
   # https://bugs.archlinux.org/task/56804 
   # https://bugs.freedesktop.org/show_bug.cgi?id=104382
   patch -Rp1 -i ../revert-udev-changes.diff
+  
+  # https://bugs.archlinux.org/task/56893
+  # Fixes Makefile race condition when installing Xorg.wrap
+  patch -Np1 -i ../xwrap-suid-race.patch
 
   autoreconf -vfi
 }
