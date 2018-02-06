@@ -6,8 +6,8 @@
 pkgbase=xorg-server
 pkgname=('xorg-server' 'xorg-server-xephyr' 'xorg-server-xdmx' 'xorg-server-xvfb'
 		'xorg-server-xnest' 'xorg-server-xwayland' 'xorg-server-common' 'xorg-server-devel')
-pkgver=1.19.6
-pkgrel=4
+pkgver=1.19.6+13+gd0d1a694f
+pkgrel=2
 arch=('x86_64')
 license=('custom')
 groups=('xorg')
@@ -18,41 +18,36 @@ makedepends=('pixman' 'libx11' 'mesa' 'mesa-libgl' 'xf86driproto' 'xcmiscproto' 
              'xf86dgaproto' 'libxmu' 'libxrender' 'libxi' 'dmxproto' 'libxaw' 'libdmx' 'libxtst' 'libxres'
              'xorg-xkbcomp' 'xorg-util-macros' 'xorg-font-util' 'glproto' 'dri2proto' 'libgcrypt' 'libepoxy'
              'xcb-util' 'xcb-util-image' 'xcb-util-renderutil' 'xcb-util-wm' 'xcb-util-keysyms' 'dri3proto'
-             'libxshmfence' 'libunwind' 'wayland-protocols') 
-source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pkgver}.tar.bz2
+             'libxshmfence' 'libunwind' 'wayland-protocols' 'git') 
+_commit=d0d1a694f967af770fba0d36043fd5218ff20984 # branch 1.19
+#source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pkgver}.tar.bz2
+source=("git+https://anongit.freedesktop.org/git/xorg/xserver.git#commit=$_commit"
         xvfb-run
 		xvfb-run.1
 		nvidia-add-modulepath-support.patch
-		xserver-autobind-hotplug.patch
-		revert-udev-changes.diff
-		xwrap-suid-race.patch)
+		xserver-autobind-hotplug.patch)
 		
-sha256sums=('a732502f1db000cf36a376cd0c010ffdbf32ecdd7f1fa08ba7f5bdf9601cc197'
+sha256sums=('SKIP'
             'ff0156309470fc1d378fd2e104338020a884295e285972cc88e250e031cc35b9'
             '2460adccd3362fefd4cdc5f1c70f332d7b578091fb9167bf88b5f91265bbd776'
             '23f2fd69a53ef70c267becf7d2a9e7e07b739f8ec5bec10adb219bc6465099c7'
-            '67aaf8668c5fb3c94b2569df28e64bfa1dc97ce429cbbc067c309113caff6369'
-            'c551dd768de10dd8a47213696003d118edb248ca6c09c0d9f1591abb0632d199'
-            '1c74554f98cad4a8b1d827b6aff221058a1f3f4d9b7111346acb22502ac5e59d')
+            '67aaf8668c5fb3c94b2569df28e64bfa1dc97ce429cbbc067c309113caff6369')
 validpgpkeys=('6DD4217456569BA711566AC7F06E8FDE7B45DAAC') # Eric Vidal
 
+pkgver() {
+  cd xserver
+  git describe --tags | sed 's/^xorg-server-//;s/_/./g;s/-/+/g'
+}
 prepare() {
-  cd "${pkgbase}-${pkgver}"
+  #cd "${pkgbase}-${pkgver}"
+  cd xserver
   
   # merged upstream in trunk
   patch -Np1 -i ../nvidia-add-modulepath-support.patch
 
   # patch from Fedora, not yet merged
   patch -Np1 -i ../xserver-autobind-hotplug.patch
-  
-  # https://bugs.archlinux.org/task/56804 
-  # https://bugs.freedesktop.org/show_bug.cgi?id=104382
-  patch -Rp1 -i ../revert-udev-changes.diff
-  
-  # https://bugs.archlinux.org/task/56893
-  # Fixes Makefile race condition when installing Xorg.wrap
-  patch -Np1 -i ../xwrap-suid-race.patch
-
+ 
   autoreconf -vfi
 }
 
@@ -65,7 +60,8 @@ build() {
   export CXXFLAGS=${CXXFLAGS/-fno-plt}
   export LDFLAGS=${LDFLAGS/,-z,now}
   
-  cd "${pkgbase}-${pkgver}"
+ # cd "${pkgbase}-${pkgver}"
+ cd xserver
   ./configure --prefix=/usr \
       --enable-ipv6 \
       --enable-dri \
@@ -115,7 +111,8 @@ package_xorg-server-common() {
   pkgdesc="Xorg server common files"
   depends=('xkeyboard-config' 'xorg-xkbcomp' 'xorg-setxkbmap')
 
-  cd "${pkgbase}-${pkgver}"
+  cd xserver
+#  cd "${pkgbase}-${pkgver}"
   install -m755 -d "${pkgdir}/usr/share/licenses/xorg-server-common"
   install -m644 COPYING "${pkgdir}/usr/share/licenses/xorg-server-common"
   
@@ -139,7 +136,8 @@ package_xorg-server() {
   replaces=('glamor-egl' 'xf86-video-modesetting')
   install=xorg-server.install
 
-  cd "${pkgbase}-${pkgver}"
+  cd xserver
+  #cd "${pkgbase}-${pkgver}"
   make DESTDIR="${pkgdir}" install
 
   # distro specific files must be installed in /usr/share/X11/xorg.conf.d
@@ -163,8 +161,9 @@ package_xorg-server-xephyr() {
   pkgdesc="A nested X server that runs as an X application"
   depends=('libxfont2' 'libgl' 'libepoxy' 'libunwind' 'libxv' 'pixman' 'xorg-server-common' 'xcb-util-image'
            'xcb-util-renderutil' 'xcb-util-wm' 'xcb-util-keysyms')
-
-  cd "${pkgbase}-${pkgver}/hw/kdrive"
+  
+  cd xserver/hw/kdrive
+  #cd "${pkgbase}-${pkgver}/hw/kdrive"
   make DESTDIR="${pkgdir}" install
 
   install -m755 -d "${pkgdir}/usr/share/licenses/xorg-server-xephyr"
@@ -174,8 +173,9 @@ package_xorg-server-xephyr() {
 package_xorg-server-xvfb() {
   pkgdesc="Virtual framebuffer X server"
   depends=('libxfont2' 'libunwind' 'pixman' 'xorg-server-common' 'xorg-xauth' 'libgl')
-
-  cd "${pkgbase}-${pkgver}/hw/vfb"
+  
+  cd xserver/hw/vfb
+  #cd "${pkgbase}-${pkgver}/hw/vfb"
   make DESTDIR="${pkgdir}" install
 
   install -m755 "${srcdir}/xvfb-run" "${pkgdir}/usr/bin/"
@@ -189,7 +189,8 @@ package_xorg-server-xnest() {
   pkgdesc="A nested X server that runs as an X application"
   depends=('libxfont2' 'libxext' 'libunwind' 'pixman' 'xorg-server-common')
 
-  cd "${pkgbase}-${pkgver}/hw/xnest"
+  cd xserver/hw/xnest
+  #cd "${pkgbase}-${pkgver}/hw/xnest"
   make DESTDIR="${pkgdir}" install
 
   install -m755 -d "${pkgdir}/usr/share/licenses/xorg-server-xnest"
@@ -199,8 +200,9 @@ package_xorg-server-xnest() {
 package_xorg-server-xdmx() {
   pkgdesc="Distributed Multihead X Server and utilities"
   depends=('libxfont2' 'libxi' 'libxaw' 'libxrender' 'libdmx' 'libxfixes' 'libunwind' 'pixman' 'xorg-server-common')
-
-  cd "${pkgbase}-${pkgver}/hw/dmx"
+  
+  cd xserver/hw/dmx
+  #cd "${pkgbase}-${pkgver}/hw/dmx"
   make DESTDIR="${pkgdir}" install
 
   install -m755 -d "${pkgdir}/usr/share/licenses/xorg-server-xdmx"
@@ -210,8 +212,9 @@ package_xorg-server-xdmx() {
 package_xorg-server-xwayland() {
   pkgdesc="run X clients under wayland"
   depends=('libxfont2' 'libepoxy' 'libunwind' 'libgl' 'pixman' 'xorg-server-common')
-
-  cd "${pkgbase}-${pkgver}/hw/xwayland"
+  
+  cd xserver/hw/xwayland
+  #cd "${pkgbase}-${pkgver}/hw/xwayland"
   make DESTDIR="${pkgdir}" install
 
   install -m755 -d "${pkgdir}/usr/share/licenses/xorg-server-xwayland"
@@ -228,7 +231,8 @@ package_xorg-server-devel() {
            # not technically required but almost every Xorg pkg needs it to build
            'xorg-util-macros')
 
-  cd "${pkgbase}-${pkgver}"
+  cd xserver
+  #cd "${pkgbase}-${pkgver}"
   make DESTDIR="${pkgdir}" install
 
   rm -rf "${pkgdir}/usr/bin"
