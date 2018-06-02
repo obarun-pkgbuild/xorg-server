@@ -7,7 +7,7 @@ pkgbase=xorg-server
 pkgname=('xorg-server' 'xorg-server-xephyr' 'xorg-server-xdmx' 'xorg-server-xvfb' 'xorg-server-xnest' 
          'xorg-server-xwayland' 'xorg-server-common' 'xorg-server-devel')
 pkgver=1.20.0
-pkgrel=5
+pkgrel=6
 arch=('x86_64')
 license=('custom')
 groups=('xorg')
@@ -26,6 +26,8 @@ source=(https://xorg.freedesktop.org/releases/individual/xserver/${pkgbase}-${pk
         xserver-autobind-hotplug.patch
         xvfb-run # with updates from FC master
         xvfb-run.1
+        xserver-1-2-glamor-Always-return-0-from-glamor_fds_from_pixmap-on-error.patch
+        xserver-2-2-glamor-Propagate-glamor_fds_from_pixmap-error-in-glamor_fd_from_pixmap.patch
         0001-v2-FS-58644.patch)
 validpgpkeys=('7B27A3F1A6E18CD9588B4AE8310180050905E40C'
               'C383B778255613DFDB409D91DB221A6900000011'
@@ -49,6 +51,12 @@ prepare() {
   
   # https://bugs.freedesktop.org/show_bug.cgi?id=106588
   patch -Np1 -i ../0001-v2-FS-58644.patch
+  
+  # Fix XWayland hangs - FS#58705
+  # https://patchwork.freedesktop.org/series/43618/
+  patch -Np1 -i ../xserver-1-2-glamor-Always-return-0-from-glamor_fds_from_pixmap-on-error.patch
+  patch -Np1 -i ../xserver-2-2-glamor-Propagate-glamor_fds_from_pixmap-error-in-glamor_fd_from_pixmap.patch
+
 }
 
 build() {
